@@ -14,6 +14,7 @@ const bodyParser = require("body-parser");
 const libxmljs = require("libxmljs");
 const multer = require("multer");
 const path = require("path");
+const sanitizeFilename = require("sanitize-filename");
 const fs = require("fs");
 const { exec } = require("node:child_process");
 const rateLimit = require("express-rate-limit");
@@ -38,7 +39,12 @@ app.post("/ufo/upload", uploadRateLimiter, upload.single("file"), (req, res) => 
 
   console.log("Received uploaded file:", req.file.originalname);
 
-  const uploadedFilePath = path.join(__dirname, req.file.originalname);
+  const sanitizeFilename = require("sanitize-filename");
+  const safeFileName = sanitizeFilename(req.file.originalname);
+  const uploadedFilePath = path.resolve(__dirname, safeFileName);
+  if (!uploadedFilePath.startsWith(__dirname)) {
+    return res.status(400).send("Invalid file name.");
+  }
   fs.writeFileSync(uploadedFilePath, req.file.buffer);
 
   res.status(200).send("File uploaded successfully.");
